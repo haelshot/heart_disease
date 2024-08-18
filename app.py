@@ -34,6 +34,7 @@ mappings = {
 }
 
 st.title('Heart Disease Prediction')
+st.write("The prediction can either be `heart disease` or `No heart disease` ")
 
 # Create input fields
 data = []
