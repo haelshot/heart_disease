@@ -2,27 +2,28 @@ import streamlit as st
 import joblib
 import numpy as np
 
-# Load the trained model
-model = joblib.load('model.pkl')
+try:
+    model = joblib.load('model.pkl')
+except:
+    st.error("Failed to load the model. Make sure 'model.pkl' is in the same directory as this script.")
+    st.stop()
 
-# Define the variables and their dropdown options with mappings
 variables = {
-    "age": {"type": "number"},
-    "sex": {"type": "select", "options": ["female", "male"]},
-    "cp": {"type": "select", "options": ["typical angina", "atypical angina", "non-anginal pain", "asymptomatic"]},
-    "trestbps": {"type": "number"},
-    "chol": {"type": "number"},
-    "fbs": {"type": "select", "options": ["lower than 120mg/ml", "greater than 120mg/ml"]},
-    "restecg": {"type": "select", "options": ["normal", "ST-T wave abnormality", "left ventricular hypertrophy"]},
-    "thalach": {"type": "number"},
-    "exang": {"type": "select", "options": ["no", "yes"]},
-    "oldpeak": {"type": "number"},
-    "slope": {"type": "select", "options": ["upsloping", "flat", "downsloping"]},
-    "ca": {"type": "number"},
-    "thal": {"type": "select", "options": ["normal", "fixed defect", "reversable defect"]}
+    "age": {"type": "number", "default": 50},
+    "sex": {"type": "select", "options": ["female", "male"], "default": "male"},
+    "cp": {"type": "select", "options": ["typical angina", "atypical angina", "non-anginal pain", "asymptomatic"], "default": "typical angina"},
+    "trestbps": {"type": "number", "default": 120},
+    "chol": {"type": "number", "default": 200},
+    "fbs": {"type": "select", "options": ["lower than 120mg/ml", "greater than 120mg/ml"], "default": "lower than 120mg/ml"},
+    "restecg": {"type": "select", "options": ["normal", "ST-T wave abnormality", "left ventricular hypertrophy"], "default": "normal"},
+    "thalach": {"type": "number", "default": 150},
+    "exang": {"type": "select", "options": ["no", "yes"], "default": "no"},
+    "oldpeak": {"type": "number", "default": 1},
+    "slope": {"type": "select", "options": ["upsloping", "flat", "downsloping"], "default": "upsloping"},
+    "ca": {"type": "number", "default": 0},
+    "thal": {"type": "select", "options": ["normal", "fixed defect", "reversable defect"], "default": "normal"}
 }
 
-# Mappings to convert string values to the numeric values expected by the model
 mappings = {
     "sex": {"female": 0, "male": 1},
     "cp": {"typical angina": 1, "atypical angina": 2, "non-anginal pain": 3, "asymptomatic": 4},
@@ -34,25 +35,44 @@ mappings = {
 }
 
 st.title('Heart Disease Prediction')
-st.write("The prediction can either be `heart disease` or `No heart disease` ")
+st.write("The prediction can either be `heart disease` or `No heart disease`")
 
-# Create input fields
+if 'changed' not in st.session_state:
+    st.session_state.changed = False
+
+def set_changed():
+    st.session_state.changed = True
+
 data = []
 for var, info in variables.items():
     if info["type"] == "select":
-        value = st.selectbox(var.capitalize(), info["options"])
-        # Convert string input to numeric value using mappings
+        value = st.selectbox(
+            var.capitalize(), 
+            info["options"], 
+            index=info["options"].index(info["default"]),
+            key=var,
+            on_change=set_changed
+        )
         data.append(mappings[var][value])
     else:
-        value = st.number_input(var.capitalize(), step=1)
+        value = st.number_input(
+            var.capitalize(), 
+            value=info["default"], 
+            step=1,
+            key=var,
+            on_change=set_changed
+        )
         data.append(float(value))
 
-if st.button('Predict'):
-    # Convert to NumPy array and reshape for the model
+if st.button('Predict', disabled=not st.session_state.changed):
     data = np.array(data).reshape(1, -1)
     
-    # Make prediction
-    prediction = model.predict(data)[0]
-    result = 'Heart disease' if prediction == 1 else 'No heart disease'
-    
-    st.write(f"Prediction Result: {result}")
+    try:
+        prediction = model.predict(data)[0]
+        result = 'Heart disease' if prediction == 1 else 'No heart disease'
+        st.write(f"Prediction Result: {result}")
+    except:
+        st.error("An error occurred during prediction. Please try again.")
+
+if not st.session_state.changed:
+    st.info("Input your values for prediction button to become active")
