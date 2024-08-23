@@ -3,7 +3,7 @@ import joblib
 import numpy as np
 
 try:
-    model = joblib.load('model.pkl')
+    model = joblib.load('model_v3.pkl')
 except:
     st.error("Failed to load the model. Make sure 'model.pkl' is in the same directory as this script.")
     st.stop()
